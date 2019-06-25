@@ -1,0 +1,67 @@
+---
+title: "Two BRMS Models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Packages
+
+```{r}
+pacman::p_load(tidyverse, brms)
+```
+
+
+# Data
+
+```{r}
+load("loglin_dat.Rdata")
+loglin_dat %>% 
+  glimpse
+```
+
+
+
+```{r}
+load("yt_estimation.Rdata")
+yt_estimation %>% 
+  glimpse
+```
+
+
+
+# Models
+
+Both models ahve 4 chains with each 1000 draws in the warm up phase and 1000 samples for final the posterior distribution.  
+
+```{r, eval = F}
+#table(as.numeric(yt_estimation$rank_factor) > 0)
+# positivity constrait or ordered factor (?)
+ord_logit <- brm(as.numeric(rank_factor) ~ emi_score*treatment + (emi_score*treatment | accounts), 
+                 data = yt_estimation, family = "cumulative", cores = 4) # speed up a little bit
+
+pois_mod <- brm(Freq ~ EMI * Treatment + (EMI * Treatment | Account), 
+                data = loglin_dat, family = poisson)
+```
+
+
+```{r, eval = F, , echo = F}
+save(ord_logit, file = "ord_logit.Rdata")
+save(pois_mod, file = "pois_mod.Rdata")
+```
+
+
+```{r, echo = F}
+load("ord_logit.Rdata")
+load("pois_mod.Rdata")
+```
+
+
+```{r}
+brms::stanplot(ord_logit)
+brms::stanplot(pois_mod)
+```
+
